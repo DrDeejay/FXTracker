@@ -1,0 +1,16 @@
+/* FXTracker CSS */
+.projsubject
+{
+	font-weight: bold;
+	font-size: 110%;
+	color: #d97b33;
+}
+
+.fullwidth
+{
+	width: 100%;
+}
+.halfwidth
+{
+	width: 50%;
+}
