@@ -1,0 +1,206 @@
+<?php
+
+/* FXTracker Database Framework */
+
+if (!defined('SMF'))
+	die('This framework requires SMF to be loaded.');
+
+class fxdb
+{
+	// Grab all entries, even if we have none.
+	public function grabEntries($sort = 'desc')
+	{
+		// Need the db functions?
+		global $smcFunc, $user_profile, $context;
+
+		// Grab 'em all.
+		$plusPrivate = !allowedTo('bugtracker_viewprivate') ? 'WHERE private="0"' : '';
+		$result = $smcFunc['db_query']('', '
+			SELECT id, name, description, type, tracker, private, startedon, project, status, attention
+			FROM {db_prefix}bugtracker_entries
+			' . $plusprivate . '
+			ORDER BY id ' . $sort);
+
+		// Make a nice list of them.
+		$data['entries'] = array();
+		$data['issue'] = array();
+		$data['feature'] = array();
+		$data['attention'] = array();
+		while ($entry = $smcFunc['db_fetch_assoc']($result))
+		{
+			// Load the member data for this tracker.
+			loadMemberData($entry['tracker']);
+
+			// Then we're ready for some action.
+			$data['entries'][$entry['id']] = array(
+				'id' => $entry['id'],
+				'name' => htmlspecialchars($entry['name']),
+				'shortdesc' => shorten_subject($entry['description'], 50),
+				'desc' => $entry['description'],
+				'type' => $entry['type'],
+				'tracker' => $user_profile[$entry['tracker']],
+				'private' => ($entry['private'] == 1 ? true : false),
+				'started' => $entry['startedon'],
+				'project' => $entry['project'],
+				'status' => $entry['status'],
+				'attention' => $entry['attention'],
+			);
+
+			// Assuming the project exists, add this into the list of entries from that project.
+			if (isset($context['bugtracker']['projects'][$entry['project']]))
+				$context['bugtracker']['projects'][$entry['project']]['entries'][] = $entry['id'];
+
+			// Also create a list of issues and features!
+			$data[$entry['type']][] = $data['entries'][$entry['id']];
+
+			// Is the status of this entry "attention"? If so, add it to the list of attention requirements thingies!
+			if ($entry['attention'])
+				$data['attention'][] = $data['entries'][$entry['id']];
+		}
+	
+		// Clean up.
+		$smcFunc['db_free_result']($entry);
+
+		// And return the data.
+		return $data;
+	}
+	// Okay this is just a simple set of functions which interact with the FXTracker database tables.
+	public function grabEntry($id)
+	{
+		// We require SMF's DB functions.
+		global $smcFunc;
+
+		// Execute the query.
+		$result = $smcFunc['db_query']('', '
+			SELECT id, name, description, type, tracker, private, startedon, project, status, attention
+			FROM {db_prefix}bugtracker_entries
+			WHERE id={int:id}',
+			array(
+				'id' => $id,
+			));
+
+		// Got anything? No?
+		if ($smcFunc['db_num_rows']($result) == 0)
+		{
+			// Clean the result.
+			$smcFunc['db_free_result']($result);
+			return false;
+		}
+		
+		// Yeah, we do, so fetch it.
+		$data = $smcFunc['db_fetch_assoc']($result);
+
+		// Free the result. Fly as a bird!
+		$smcFunc['db_free_result']($result);
+
+		return $data;
+	}
+
+	// Grab all projects.
+	public function grabProjects($sort = 'desc')
+	{
+		// smcFunc is needed here!
+		global $smcFunc;
+
+		$projects = $smcFunc['db_query']('', '
+			SELECT id, name, description, issuenum, featurenum, lastnum
+			FROM {db_prefix}bugtracker_projects');
+
+		// Make a nice list of them projects.
+		$data = array();
+		while ($project = $smcFunc['db_fetch_assoc']($projects))
+		{
+			// Add it into the list.
+			$data[$project['id']] = array(
+				'id' => $project['id'],
+				'name' => htmlspecialchars($project['name']),
+				'desc' => $project['description'],
+				'num' => array(
+					'issues' => $project['issuenum'],
+					'features' => $project['featurenum'],
+				),
+				'last' => $project['lastnum'],
+				'entries' => array(),
+			);
+		}
+
+		// Clean out the result data.
+		$smcFunc['db_free_result']($projects);
+
+		// And return the actual data!
+		return $data;
+	}
+
+	// Grab a project.
+	public function grabProject($id)
+	{
+		global $smcFunc;
+
+		// Load the project data.
+		$project = $smcFunc['db_query']('', '
+			SELECT id, name, description, issuenum, featurenum, lastnum
+			FROM {db_prefix}bugtracker_projects
+			WHERE id={int:id}',
+			array(
+				'id' => $_GET['id'],
+			));
+
+		// And fetch the data.
+		$data = $smcFunc['db_fetch_assoc']($project);
+
+		// Clean this stuff up too, mate. Yep, talking to you.
+		$smcFunc['db_free_result']($project);
+	}
+
+	// Grab all issues from a project.
+	public function grabProjectEntries($projid)
+	{
+		global $smcFunc;
+
+		// Just load all the issues assigned with this project. Displaying will happen later on.
+		$plusPrivate = !allowedTo('bugtracker_viewprivate') ? 'AND private="0"' : '';
+		$entries = $smcFunc['db_query']('', '
+			SELECT id, name, description, type, tracker, private, startedon, project, status, attention
+			FROM {db_prefix}bugtracker_entries
+			WHERE project={int:project}
+			' . $plusprivate . '
+			ORDER BY id DESC',
+			array(
+				'project' => $_GET['id'],
+			));
+
+		// Fetch all the data from here.
+		$data['entries'] = array();
+		$data['attention'] = array();
+		while ($entry = $smcFunc['db_fetch_assoc']($entries))
+		{
+			// Load the member data for those trackers.
+			loadMemberData($entry['tracker']);
+
+			// Then we're ready for some action.
+			$data['entries'][$entry['id']] = array(
+				'id' => $entry['id'],
+				'name' => htmlspecialchars($entry['name']),
+				'shortdesc' => shorten_subject($entry['description'], 50),
+				'desc' => $entry['description'],
+				'type' => $entry['type'],
+				'tracker' => $user_profile[$entry['tracker']],
+				'private' => ($entry['private'] == 1 ? true : false),
+				'started' => $entry['startedon'],
+				'project' => $entry['project'],
+				'status' => $entry['status'],
+				'attention' => $entry['attention'],
+			);
+
+			// Is the status of this entry "attention"? If so, add it to the list of attention requirements thingies!
+			if ($entry['attention'])
+				$data['attention'][] = $context['bugtracker']['entries'][$entry['id']];
+		}
+
+		// Free the result.
+		$smcFunc['db_free_result']($entries);
+
+		// Return the data.
+		return $data;
+	}
+}
