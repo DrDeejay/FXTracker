@@ -14,16 +14,16 @@ function template_TrackerHome()
 			<img src="', $settings['images_url'], '/bugtracker/latest.png" class="icon" alt="" />', $txt['bugtracker_latest'], '
 		</h3>
 	</div>
-	<table style="width: 100%">
+	<table class="fullwidth">
 		<tr>
-			<td style="width:50%">
+			<td class="halfwidth">
 				<div class="title_bar">
 					<h3 class="titlebg">
 						', $txt['bugtracker_latest_issues'], '
 					</h3>
 				</div>
 			</td>
-			<td style="width:50%">
+			<td class="halfwidth">
 				<div class="title_bar">
 					<h3 class="titlebg">
 						', $txt['bugtracker_latest_features'], '
@@ -31,9 +31,14 @@ function template_TrackerHome()
 				</div>
 			</td>
 		</tr>
+	</table>
+	<table class="fullwidth">
 		<tr>
-			<td style="width:50%">
-				<div class="plainbox">';
+			<td>
+				<div class="plainbox">
+					<table class="fullwidth">
+						<tr class="halfwidth floatleft">
+							<td>';
 
 	// Load the list of entries from the latest features!
 	if (!empty($context['bugtracker']['latest']['issues']))
@@ -43,17 +48,17 @@ function template_TrackerHome()
 		{
 			$i++;
 			echo '
-					', $i, '. <a href="', $scripturl, '?action=bugtracker;sa=view;id=', $entry['id'], '">', $entry['name'], '</a><br />';
+								', $i, '. <a href="', $scripturl, '?action=bugtracker;sa=view;id=', $entry['id'], '">', $entry['name'], '</a><br />';
 		}
 	}
 	else
 		echo $txt['bugtracker_no_latest_entries'];
 
 	echo '
-				</div>
-			</td>
-			<td style="width:50%">
-				<div class="plainbox">';
+							</td>
+						</tr>
+						<tr class="halfwidth floatright">
+							<td>';
 
 	// Load the list of entries from the latest features!
 	if (!empty($context['bugtracker']['latest']['features']))
@@ -69,7 +74,9 @@ function template_TrackerHome()
 	else
 		echo $txt['bugtracker_no_latest_entries'];
 
-	echo '					
+	echo '						</td>
+						</tr>
+					</table>
 				</div>
 			</td>
 		</tr>
@@ -89,10 +96,8 @@ function template_TrackerHome()
 	<div class="windowbg', $windowbg == 0 ? '' : '2', '">
 		<span class="topslice"><span></span></span>
 		<div class="info" style="margin-left: 10px">
-			<a style="font-weight:bold;font-size:110%;color:#d97b33" name="p', $project['id'], '" href="', $scripturl, '?action=bugtracker;sa=projindex;id=', $project['id'], '">
-				', $project['name'], '
-			</a> - ', sprintf($txt['issues'], $project['num']['issues']), ', ', sprintf($txt['features'], $project['num']['features']), '<br />
-			', parse_bbc($project['desc']), '
+			<a class="projsubject" href="', $scripturl, '?action=bugtracker;sa=projindex;id=', $project['id'], '">', $project['name'], '</a> - ', sprintf($txt['issues'], $project['num']['issues']), ', ', sprintf($txt['features'], $project['num']['features']), '<br />
+			', htmlspecialchars($project['desc']), '
 		</div>
 		<span class="botslice"><span></span></span>
 	</div>';
@@ -107,8 +112,10 @@ function template_TrackerHome()
 		</h3>
 	</div>';
 
+	// Show the items requiring attention.
 	if (count($context['bugtracker']['attention']) != 0)
 	{
+		// Headers.
 		echo '
 	<div class="tborder topic_table">
 		<table class="table_grid" cellspacing="0" style="width: 100%">
@@ -121,12 +128,17 @@ function template_TrackerHome()
 					<th scope="col" width="18%">
 						', $txt['status'], '
 					</th>
-					<th scope="col" width="18%" class="last_th">
+					<th scope="col" width="18%">
 						', $txt['type'], '
+					</th>
+					<th scope="col" width="16%" class="last_th">
+						', $txt['project'], '
 					</th>
 				</tr>
 			</thead>
 			<tbody>';
+		
+		// And the content.
 		foreach ($context['bugtracker']['attention'] as $entry)
 		{
 			echo '
@@ -153,13 +165,28 @@ function template_TrackerHome()
 					<td class="stats windowbg2">
 						', $txt['bugtracker_' . $entry['type']], '
 					</td>
+					<td class="stats windowbg">
+						', !empty($context['bugtracker']['projects'][$entry['project']]['name']) ? $context['bugtracker']['projects'][$entry['project']]['name'] : $txt['na'], '
+					</td>
 				</tr>';
 		}
 		echo '
 			</tbody>
 		</table>
-	</div>';
+	</div><br />';
 	}
+
+	// The info centre?
+	echo '
+	<div class="cat_bar">
+		<h3 class="catbg">
+			<img src="', $settings['images_url'], '/bugtracker/infocenter.png" alt="" class="icon" /> ', $txt['info_centre'], '
+		</h3>
+	</div>
+	<div class="plainbox">
+		<strong>', $txt['total_entries'], '</strong> ', count($context['bugtracker']['entries']), '<br />
+		<strong>', $txt['total_projects'], '</strong> ', count($context['bugtracker']['projects']), '<br /><br />
+	</div>';
 	
 	// And our last batch of HTML.
 	echo '

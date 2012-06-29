@@ -7,7 +7,7 @@
 function BugTrackerMain()
 {
 	// Our usual stuff.
-	global $context, $txt, $sourcedir;
+	global $context, $txt, $sourcedir, $settings;
 
 	// Are we allowed to view this?
 	isAllowedTo('bugtracker_view');
@@ -33,6 +33,9 @@ function BugTrackerMain()
 		'view' => 'View',
 	);
 
+	// Allow mod creators to easily snap in.
+	call_integration_hook('integrate_bugtracker_actions', array(&$sactions));
+
 	// Default is home.
 	$action = 'home';
 
@@ -45,6 +48,10 @@ function BugTrackerMain()
 		'url' => $scripturl . '?action=bugtracker',
 		'name' => $txt['bugtracker'],
 	);
+
+	// Also add our style into the header.
+	$context['html_headers'] .= '
+	<link rel="stylesheet" type="text/css" href="' . $settings['actual_theme_url'] . '/css/bugtracker.css?fin20" />';
 
 	// Then, execute the function!
 	call_user_func('BugTracker' . $sactions[$action]);

@@ -68,7 +68,15 @@ $txt['entry_submit'] = 'Submit';
 $txt['save_failed'] = 'Failed to save the given data.';
 
 $txt['progress'] = 'Progress';
+$txt['na'] = 'N/A';
 
 $txt['no_such_project'] = 'There is no such project';
+
+$txt['info_centre'] = 'Info Center';
+$txt['total_entries'] = 'Total entries:';
+$txt['total_projects'] = 'Total projects:';
+
+// Permissions
+$txt['fxt_classic'] = 'FXTracker Permissions';
 
 ?>
