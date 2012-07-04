@@ -7,14 +7,14 @@
 function BugTrackerMain()
 {
 	// Our usual stuff.
-	global $context, $txt, $sourcedir, $settings;
+	global $context, $txt, $sourcedir, $settings, $scripturl;
 
-	// Are we allowed to view this?
-	isAllowedTo('bugtracker_view');
-	
 	// Load the language and template.
 	loadLanguage('BugTracker');
 	loadTemplate('BugTracker');
+
+	// Are we allowed to view this?
+	isAllowedTo('bugtracker_view');
 
 	// Include our database class.
 	require($sourcedir . '/FXTracker/Class-Database.php');
@@ -30,6 +30,7 @@ function BugTrackerMain()
 		'projindex' => 'ViewProject',
 		'remove' => 'RemoveEntry',
 		'submit' => 'SubmitData',
+		'trash' => 'TrashEntry',
 		'view' => 'View',
 	);
 
@@ -88,7 +89,7 @@ function BugTrackerHome()
 function BugTrackerView()
 {
 	// Our usual variables.
-	global $context, $smcFunc, $user_info, $user_profile, $txt;
+	global $context, $smcFunc, $user_info, $user_profile, $txt, $scripturl;
 
 	// Grab the info for this issue, and if we can't, tell the user that the issue does not exist.
 	$data = fxdb::grabEntry($_GET['id']);
@@ -152,6 +153,29 @@ function BugTrackerView()
 		'url' => $scripturl . '?action=bugtracker;sa=view;id=' . $data['id'],
 		'name' => sprintf($txt['entrytitle'], $data['id'], $data['name']),
 	);
+
+	// Setup permissions...
+	$context['can_bt_mark_own'] = allowedTo('bt_mark_own') && $context['user']['id'] == $data['tracker'];
+	$context['can_bt_mark_any'] = allowedTo('bt_mark_any');
+	$context['can_bt_mark_new_own'] = allowedTo('bt_mark_new_own') && $context['user']['id'] == $data['tracker'];
+	$context['can_bt_mark_new_any'] = allowedTo('bt_mark_new_any');
+	$context['can_bt_mark_wip_own'] = allowedTo('bt_mark_wip_own') && $context['user']['id'] == $data['tracker'];
+	$context['can_bt_mark_wip_any'] = allowedTo('bt_mark_wip_any');
+	$context['can_bt_mark_done_own'] = allowedTo('bt_mark_done_own') && $context['user']['id'] == $data['tracker'];
+	$context['can_bt_mark_done_any'] = allowedTo('bt_mark_done_any');
+	$context['can_bt_mark_reject_own'] = allowedTo('bt_mark_reject_own') && $context['user']['id'] == $data['tracker'];
+	$context['can_bt_mark_reject_any'] = allowedTo('bt_mark_reject_any');
+	$context['can_bt_mark_attention_any'] = allowedTo('bt_mark_attention_any');
+	$context['can_bt_mark_attention_own'] = allowedTo('bt_mark_attention_own') && $context['user']['id'] == $data['tracker'];
+	$context['can_bt_reply_any'] = allowedTo('bt_reply_any');
+	$context['can_bt_reply_own'] = allowedTo('bt_reply_own') && $context['user']['id'] == $data['tracker'];
+	$context['can_bt_edit_any'] = allowedTo('bt_reply_any');
+	$context['can_bt_edit_own'] = allowedTo('bt_reply_own') && $context['user']['id'] == $data['tracker'];
+	$context['can_bt_remove_any'] = allowedTo('bt_remove_any');
+	$context['can_bt_remove_own'] = allowedTo('bt_remove_own') && $context['user']['id'] == $data['tracker'];
+	
+	// If we can mark something.... tell us!
+	$context['bt_can_mark'] = ($context['can_bt_mark_own'] || $context['can_bt_mark_any']) && ($context['can_bt_mark_new_own'] || $context['can_bt_mark_new_any'] || $context['can_bt_mark_wip_own'] || $context['can_bt_mark_wip_any'] || $context['can_bt_mark_done_own'] || $context['can_bt_mark_done_any'] || $context['can_bt_mark_reject_own'] || $context['can_bt_mark_reject_any']);
 
 	// Then tell SMF what template to load.
 	$context['sub_template'] = 'TrackerView';
@@ -269,7 +293,7 @@ function BugTrackerEdit()
 			'desc' => $data['description'],
 			'type' => $data['type'],
 			'tracker' => $user_profile[$data['tracker']],
-			'private' => ($data['private'] == 1 ? true : false),
+			'private' => $data['private'],
 			'started' => $data['startedon'],
 			'project' => $data['project'],
 			'status' => $data['status'],
@@ -365,7 +389,7 @@ function BugTrackerNewEntry()
 
 function BugTrackerViewProject()
 {
-	global $context, $smcFunc, $txt;
+	global $context, $smcFunc, $txt, $scripturl;
 
 	// Load the project data.
 	$context['bugtracker']['project'] = fxdb::grabProject($_GET['id']) or fatal_lang_error('no_such_project');
@@ -381,8 +405,6 @@ function BugTrackerViewProject()
 		'url' => $scripturl . '?action=bugtracker;sa=projindex;id=' . $context['bugtracker']['project']['id'],
 		'name' => $context['bugtracker']['project']['name'],
 	);
-
-	//die(var_Dump($context['bugtracker']['project']));
 	
 	// Page title time!
 	$context['page_title'] = $context['bugtracker']['project']['name'];
@@ -411,14 +433,15 @@ function BugTrackerSubmitData()
 			// We should be ready to update it then.
 			$smcFunc['db_query']('', '
 				UPDATE {db_prefix}bugtracker_entries
-				SET name={string:title}, type={string:type}, description={string:desc}, progress={int:progress}
+				SET name={string:title}, type={string:type}, description={string:desc}, progress={int:progress}, private={int:private}
 				WHERE id={int:id}',
 				array(
-					'title' => $title,
+					'title' => $smcFunc['db_unescape_string']($title),
 					'type' => $type,
-					'desc' => $desc,
+					'desc' => $smcFunc['db_unescape_string']($desc),
 					'id' => $_POST['entry_id'],
 					'progress' => $progress,
+					'private' => (int) isset($_POST['entry_private']),
 				));
 				
 			// Is the progress 100%?
@@ -451,11 +474,11 @@ function BugTrackerSubmitData()
 
 			// Then we should be able to add them in.
 			$smcFunc['db_query']('', '
-				INSERT INTO {db_prefix}bugtracker_entries (name, description, type, tracker, private, startedon, project, status, attention)
-				VALUES ({string:name}, {string:desc}, {string:type}, {int:uid}, {int:private}, CURRENT_TIMESTAMP, {int:id}, {string:status}, 0)',
+				INSERT INTO {db_prefix}bugtracker_entries (name, description, type, tracker, private, project, status, attention)
+				VALUES ({string:name}, {string:desc}, {string:type}, {int:uid}, {int:private}, {int:id}, {string:status}, 0)',
 				array(
-					'name' => $title,
-					'desc' => $desc,
+					'name' => $smcFunc['db_unescape_string']($title),
+					'desc' => $smcFunc['db_unescape_string']($desc),
 					'type' => $type,
 					'uid' => $context['user']['id'],
 					'private' => isset($_POST['entry_private']) ? 1 : 0,
@@ -482,7 +505,7 @@ function BugTrackerRemoveEntry()
 	// Checks first please!
 	isAllowedTo('bt_remove_entry');
 	
-	// Then
+	// Then 
 }
 
 ?>
