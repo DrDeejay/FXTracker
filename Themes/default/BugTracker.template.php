@@ -217,21 +217,21 @@ function template_TrackerView()
 		<ul>';
 
 	// Are we allowed to reply to this entry?
-	if (allowedTo('bugtracker_reply_all_entries') || (allowedTo('bugtracker_reply_own_entry') && $context['bugtracker']['entry']['tracker']['id_member'] == $context['user']['id']))
+	if ($context['can_bt_reply_any'] || $context['can_bt_reply_own'])
 		echo '
 			<li>
 				<a class="active" href="', $scripturl, '?action=bugtracker;sa=reply;id=', $context['bugtracker']['entry']['id'], '"><span>', $txt['reply'], '</span></a>
 			</li>';
 	
 	// Are we allowed to edit this entry?
-	if (allowedTo('bugtracker_edit_all_entries') || (allowedTo('bugtracker_edit_own_entry') && $context['bugtracker']['entry']['tracker']['id_member'] == $context['user']['id']))
+	if ($context['can_bt_edit_any'] || $context['can_bt_edit_own'])
 		echo '
 			<li>
 				<a href="', $scripturl, '?action=bugtracker;sa=edit;id=', $context['bugtracker']['entry']['id'], '"><span>', $txt['editentry'], '</span></a>
 			</li>';
 
 	// Or allowed to remove it?
-	if (allowedTo('bugtracker_remove_all_entries') || (allowedTo('bugtracker_remove_own_entry') && $context['bugtracker']['entry']['tracker']['id_member'] == $context['user']['id']))
+	if ($context['can_bt_remove_any'] || $context['can_bt_remove_own'])
 		echo '
 			<li>
 				<a href="', $scripturl, '?action=bugtracker;sa=remove;id=', $context['bugtracker']['entry']['id'], '"><span>', $txt['removeentry'], '</span></a>
@@ -276,32 +276,50 @@ function template_TrackerView()
 			', $context['bugtracker']['entry']['desc'], '
 		</div>
 		<span class="botslice"><span></span></span>
-	</div>
+	</div>';
+
+	// Allowed to mark?
+	if ($context['bt_can_mark'])
+	{
+		echo '
 
 	<div class="buttonlist floatright">
-		<ul>
+		<ul>';
+		if ($context['can_bt_mark_new_any'] || $context['can_bt_mark_new_own'])
+			echo '
 			<li>
 				<a ', $context['bugtracker']['entry']['status'] == 'new' ? 'class="active"' : '', ' href="', $scripturl, '?action=bugtracker;sa=mark;as=new;id=', $context['bugtracker']['entry']['id'], '">
 					<span>', $txt['mark_new'], '</span>
 				</a>
-			</li>
+			</li>';
+		if ($context['can_bt_mark_wip_any'] || $context['can_bt_mark_wip_own'])
+			echo '
 			<li>
 				<a ', $context['bugtracker']['entry']['status'] == 'wip' ? 'class="active"' : '', ' href="', $scripturl, '?action=bugtracker;sa=mark;as=wip;id=', $context['bugtracker']['entry']['id'], '">
 					<span>', $txt['mark_wip'], '</span>
 				</a>
-			</li>
+			</li>';
+		if ($context['can_bt_mark_done_any'] || $context['can_bt_mark_done_own'])
+			echo '
 			<li>
 				<a ', $context['bugtracker']['entry']['status'] == 'done' ? 'class="active"' : '', ' href="', $scripturl, '?action=bugtracker;sa=mark;as=done;id=', $context['bugtracker']['entry']['id'], '">
 					<span>', $txt['mark_done'], '</span>
 				</a>
-			</li>
+			</li>';
+		if ($context['can_bt_mark_reject_any'] || $context['can_bt_mark_reject_own'])
+			echo '
 			<li>
 				<a ', $context['bugtracker']['entry']['status'] == 'reject' ? 'class="active"' : '', ' href="', $scripturl, '?action=bugtracker;sa=mark;as=reject;id=', $context['bugtracker']['entry']['id'], '">
 					<span>', $txt['mark_reject'], '</span>
 				</a>
-			</li>
+			</li>';
+		echo '
 		</ul>
-	</div>
+	</div>';
+	}
+
+	if ($context['can_bt_mark_attention_any'] || $context['can_bt_mark_attention_own'])
+		echo '
 	<div class="buttonlist floatleft">
 		<ul>
 			<li>
@@ -310,7 +328,9 @@ function template_TrackerView()
 				</a>
 			</li>
 		</ul>
-	</div>
+	</div>';
+	
+	echo '
 	<br class="clear" />';
 }
 
@@ -335,31 +355,41 @@ function template_TrackerEdit()
 			<table style="width:100%">
 				<tr>
 					<td style="width: 50%">', $txt['entry_title'], '</td>
-					<td style="width: 50%"><input type="text" size="50" name="entry_title" value="', $context['bugtracker']['entry']['name'], '" /></td>
+					<td style="width: 50%">
+						<input type="text" size="50" name="entry_title" value="', $context['bugtracker']['entry']['name'], '" />
+					</td>
 				</tr>
 				<tr>	<td style="width: 50%">', $txt['entry_type'], '</td>
 					<td style="width: 50%">
-						<input type="radio" name="entry_type" value="issue" ', $context['bugtracker']['entry']['type'] == 'issue' ? 'checked="checked"' : '', ' /> ', $txt['bugtracker_issue'], '<br />
-						<input type="radio" name="entry_type" value="feature" ', $context['bugtracker']['entry']['type'] == 'feature' ? 'checked="checked"' : '', ' /> ', $txt['bugtracker_feature'], '
+						<input type="radio" name="entry_type" value="issue" ', $context['bugtracker']['entry']['type'] == 'issue' ? 'checked="checked"' : '', '/> ', $txt['bugtracker_issue'], '<br />
+						<input type="radio" name="entry_type" value="feature" ', $context['bugtracker']['entry']['type'] == 'feature' ? 'checked="checked"' : '', '/> ', $txt['bugtracker_feature'], '
 					</td>
 				</tr>
 				<tr>
 					<td style="width: 50%">', $txt['entry_progress'], '</td>
-					<td style="width: 50%"><input type="text" size="2" name="entry_progress" value="', $context['bugtracker']['entry']['progress'], '" /></td>
+					<td style="width: 50%">
+						<input type="text" size="2" name="entry_progress" value="', $context['bugtracker']['entry']['progress'], '" />
+					</td>
+				</tr>
+				<tr>
+					<td class="halfwidth">', $txt['entry_private'], '</td>
+					<td class="halfwidth">
+						<input type="checkbox" name="entry_private"', $context['bugtracker']['entry']['private'] ? ' checked="checked"' : '', ' />
+					</td>
 				</tr>
 			</table>
-			<div class="title_bar" style="width:98%">
-				<h3 class="titlebg">
-					', $txt['entry_desc'], '
-				</h3>
-			</div>
-			<textarea name="entry_desc" style="width: 99%; height: 300px;">', $context['bugtracker']['entry']['desc'], '</textarea><br />
-
-			<strong>', $txt['info_change_status'], '</strong>
-			<div class="floatright"><input type="submit" value="', $txt['entry_submit'], '" /></div><br />
 		</div>
 		<span class="botslice"><span></span></span>
+	</div><br />
+	<div class="cat_bar">
+		<h3 class="catbg">
+			', $txt['entry_desc'], '
+		</h3>
 	</div>
+	<textarea name="entry_desc" style="height: 300px;" class="fullwidth">', $context['bugtracker']['entry']['desc'], '</textarea><br />
+
+	<strong>', $txt['info_change_status'], '</strong>
+	<div class="floatright"><input type="submit" value="', $txt['entry_submit'], '" /></div><br />
 	</form>
 	<br class="clear" />';
 }
