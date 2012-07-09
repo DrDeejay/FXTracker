@@ -1,17 +1,5 @@
 To install FXTracker:
 
-Make this simple edit in index.php (where Settings.php is):
-
-Find:
----------------
-		'buddy' => array('Subs-Members.php', 'BuddyListToggle'),
----------------
-Replace with:
----------------
-		'buddy' => array('Subs-Members.php', 'BuddyListToggle'),
-		'bugtracker' => array('Bugtracker.php', 'BugTrackerMain'),
----------------
-
 Upload the Sources and Themes site to your ==LOCAL SERVER==. That's right, DO NOT USE THIS ON LIVE SITES. Crap doesn't work yet so if you do use it it's your fault if you get errors. There you have it.
 Import the smf.sql file in phpMyAdmin.
 Then run the installer provided to install the last hooks.
