@@ -14,6 +14,17 @@ add_integration_function('integrate_pre_include', '$sourcedir/Bugtracker-Hooks.p
 add_integration_function('integrate_actions', 'fxt_actions', true);
 add_integration_function('integrate_load_permissions', 'fxt_permissions', true);
 
-echo 'Installer done';
+// Outside SMF?
+if (!defined('SMF'))
+{
+	echo 'Installer done, redirecting';
+	
+	// Load Settings.php
+	require('Settings.php');
+	global $boardurl;
+	
+	// Redirect the **** out of here
+	redirectexit($boardurl . '/index.php');
+}
 
 ?>
