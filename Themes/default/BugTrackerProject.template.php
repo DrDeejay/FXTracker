@@ -70,7 +70,7 @@ function template_TrackerViewProject()
 						</div>
 					</td>
 					<td class="stats windowbg">
-						', $txt['status_' . $entry['status']], '
+						<a href="', $scripturl, '?action=bugtracker;sa=viewstatus;status=', $entry['status'], '">', $txt['status_' . $entry['status']], '</a>
 					</td>
 					<td class="stats windowbg2">
 						<a href="', $scripturl, '?action=bugtracker;sa=viewtype;type=', $entry['type'], '">', $txt['bugtracker_' . $entry['type']], '</a>
@@ -131,7 +131,7 @@ function template_TrackerViewProject()
 						</div>
 					</td>
 					<td class="stats windowbg">
-						', $txt['status_' . $entry['status']], '
+						<a href="', $scripturl, '?action=bugtracker;sa=viewstatus;status=', $entry['status'], '">', $txt['status_' . $entry['status']], '</a>
 					</td>
 					<td class="stats windowbg2">
 						<a href="', $scripturl, '?action=bugtracker;sa=viewtype;type=', $entry['type'], '">', $txt['bugtracker_' . $entry['type']], '</a>
