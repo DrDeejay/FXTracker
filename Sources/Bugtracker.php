@@ -42,6 +42,7 @@ function BugTrackerMain()
 
 		'view' => 'View',
 		'viewtype' => 'ViewType',
+		'viewstatus' => 'ViewStatus',
 	);
 
 	// Allow mod creators to easily snap in.
@@ -729,5 +730,80 @@ function BugTrackerViewType()
 	$context['sub_template'] = 'TrackerViewType';
 	
 }
+
+function BugTrackerViewStatus()
+{
+	global $context, $smcFunc, $txt, $scripturl;
+
+	// Start by checking if we are grabbing a valid type!
+	$types = array('new', 'wip', 'done', 'reject');
+
+	if (!in_array($_GET['status'], $types))
+		fatal_lang_error('project_no_exist');
+
+	// Okay, then start loading every entry.
+	$private = !allowedTo('bugtracker_viewprivate') ? 'AND private="0"' : '';
+	$result = $smcFunc['db_query']('', '
+		SELECT
+			e.id AS entry_id, e.name AS entry_name, e.description, e.type,
+			e.tracker, e.private, e.startedon, e.project,
+			e.status, e.attention, e.progress,
+			p.id, p.name As project_name
+		FROM {db_prefix}bugtracker_entries AS e
+		INNER JOIN {db_prefix}bugtracker_projects AS p ON (e.project = p.id)
+		WHERE e.status = {string:status}
+		' . $private . '
+		ORDER BY id DESC',
+		array(
+			'status' => $_GET['status'],
+		)
+	);
+
+	// Fetch 'em!
+	$closed = 0;
+	$entries = array();
+	$attention = array();
+	while ($entry = $smcFunc['db_fetch_assoc']($result))
+	{
+		// Then we're ready for some action.
+		$entries[$entry['entry_id']] = array(
+			'id' => $entry['entry_id'],
+			'name' => $entry['entry_name'],
+			'shortdesc' => shorten_subject($entry['description'], 50),
+			'type' => $entry['type'],
+			'private' => ($entry['private'] == 1 ? true : false),
+			'status' => $entry['status'],
+			'attention' => $entry['attention'],
+			'project' => array(
+				'id' => $entry['id'],
+				'name' => $entry['project_name'],
+			),
+               		'progress' => empty($entry['progress']) ? '0%' : $entry['progress'] . '%',
+		);
+
+		// Is the status of this entry "attention"? If so, add it to the list of attention requirements thingies!
+		if ($entry['attention'])
+			$attention[] = $entries[$entry['entry_id']];
+
+		if ($entry['status'] == 'done')
+			$closed++;
+	}
+
+	// So matey tell me what ya got. Wait no, tell $context!
+	$context['bugtracker']['entries'] = $entries;
+	$context['bugtracker']['attention'] = $attention;
+	$context['bugtracker']['num_closed'] = $closed;
+
+	// Set up the linktree.
+	$context['linktree'][] = array(
+		'name' => sprintf($txt['view_all'], $txt['status_' . $_GET['status']]),
+		'url' => $scripturl . '?action=bugtracker;sa=viewtype;type=' . $_GET['status'],
+	);
+
+	// And the sub-template.
+	$context['sub_template'] = 'TrackerViewType';
+	
+}
+
 
 ?>
