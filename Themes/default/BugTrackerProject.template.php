@@ -10,16 +10,21 @@ function template_TrackerViewProject()
 	<div class="buttonlist">
 		<ul>
 			<li>
-				<a href="', $scripturl, '?action=bugtracker;sa=projindex;id=', $context['bugtracker']['project']['id'] . (isset($_GET['viewclosed']) ? '' : ';viewclosed'), '">
-					<span>', $txt[(isset($_GET['viewclosed']) ? 'hideclosed' : 'viewclosed')], '</span>
+				<a href="', $scripturl, '?action=bugtracker;sa=projectindex;project=', $context['bugtracker']['project']['id'] . (isset($_GET['viewclosed']) ? '' : ';viewclosed'), '">
+					<span>', isset($_GET['viewclosed']) ? $txt['hideclosed'] : $txt['viewclosed'] . ' [' . $context['bugtracker']['num_closed'] . ']', '</span>
 				</a>
-			</li>
+			</li>';
 
+	// Are we allowed to add a new entry?
+	if ($context['can_bt_add'])
+		echo '
 			<li>
-				<a class="active" href="', $scripturl, '?action=bugtracker;sa=new;proj=', $context['bugtracker']['project']['id'], '">
+				<a class="active" href="', $scripturl, '?action=bugtracker;sa=new;project=', $context['bugtracker']['project']['id'], '">
 					<span>', $txt['new_entry'], '</span>
 				</a>
-			</li>
+			</li>';
+
+	echo '
 		</ul>
 	</div><br />
 	<div class="tborder topic_table">
@@ -57,7 +62,7 @@ function template_TrackerViewProject()
 					<td class="subject windowbg2">
 						<div>
 							<span>
-								<a href="', $scripturl, '?action=bugtracker;sa=view;id=', $entry['id'], '">
+								<a href="', $scripturl, '?action=bugtracker;sa=view;entry=', $entry['id'], '">
 									', $entry['name'], '
 								</a> ', $entry['status'] == 'wip' ? '<span class="smalltext" style="color:#E00000">(' . $entry['progress'] . ')</span>' : '', '
 							</span>
@@ -68,7 +73,7 @@ function template_TrackerViewProject()
 						', $txt['status_' . $entry['status']], '
 					</td>
 					<td class="stats windowbg2">
-						', $txt['bugtracker_' . $entry['type']], '
+						<a href="', $scripturl, '?action=bugtracker;sa=viewtype;type=', $entry['type'], '">', $txt['bugtracker_' . $entry['type']], '</a>
 					</td>
 				</tr>';
 	}
@@ -118,7 +123,7 @@ function template_TrackerViewProject()
 					<td class="subject windowbg2">
 						<div>
 							<span>
-								<a href="', $scripturl, '?action=bugtracker;sa=view;id=', $entry['id'], '">
+								<a href="', $scripturl, '?action=bugtracker;sa=view;entry=', $entry['id'], '">
 									', $entry['name'], ' ', $entry['status'] == 'wip' ? '<span class="smalltext" style="color:#E00000">(' . $entry['progress'] . ')</span>' : '', ' 
 								</a>
 							</span>
@@ -129,7 +134,7 @@ function template_TrackerViewProject()
 						', $txt['status_' . $entry['status']], '
 					</td>
 					<td class="stats windowbg2">
-						', $txt['bugtracker_' . $entry['type']], '
+						<a href="', $scripturl, '?action=bugtracker;sa=viewtype;type=', $entry['type'], '">', $txt['bugtracker_' . $entry['type']], '</a>
 					</td>
 				</tr>';
 		}
