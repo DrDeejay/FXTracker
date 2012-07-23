@@ -181,7 +181,7 @@ function template_TrackerHome()
 						</div>
 					</td>
 					<td class="stats windowbg">
-						', $txt['status_' . $entry['status']], '
+						<a href="', $scripturl, '?action=bugtracker;sa=viewstatus;status=', $entry['status'], '">', $txt['status_' . $entry['status']], '</a>
 					</td>
 					<td class="stats windowbg2">
 						<a href="', $scripturl, '?action=bugtracker;sa=viewtype;type=', $entry['type'], '">', $txt['bugtracker_' . $entry['type']], '</a>
@@ -470,7 +470,8 @@ function template_TrackerViewType()
 {
 	global $context, $scripturl, $txt, $settings;
 
-	echo '
+	if (!isset($_GET['status']))
+		echo '
 	<div class="buttonlist">
 		<ul>
 			<li>
@@ -504,7 +505,7 @@ function template_TrackerViewType()
 	$i = 0;
 	foreach ($context['bugtracker']['entries'] as $entry)
 	{
-		if ($entry['status'] == 'done' && !isset($_GET['viewclosed']))
+		if ($entry['status'] == 'done' && !isset($_GET['viewclosed']) && !isset($_GET['status']))
 			continue;
 		
 		$i++;
@@ -527,10 +528,10 @@ function template_TrackerViewType()
 						</div>
 					</td>
 					<td class="stats windowbg">
-						', $txt['status_' . $entry['status']], '
+						<a href="', $scripturl, '?action=bugtracker;sa=viewstatus;status=', $entry['status'], '">', $txt['status_' . $entry['status']], '</a>
 					</td>
 					<td class="stats windowbg2">
-						', $txt['bugtracker_' . $entry['type']], '
+						<a href="', $scripturl, '?action=bugtracker;sa=viewtype;type=', $entry['type'], '">', $txt['bugtracker_' . $entry['type']], '</a>
 					</td>
 					<td class="stats windowbg">
 						', !empty($entry['project']) ? '<a href="' . $scripturl . '?action=bugtracker;sa=viewproject;project=' . $entry['project']['id'] . '">' . $entry['project']['name'] . '</a>' : $txt['na'], '
@@ -594,10 +595,10 @@ function template_TrackerViewType()
 						</div>
 					</td>
 					<td class="stats windowbg">
-						', $txt['status_' . $entry['status']], '
+						<a href="', $scripturl, '?action=bugtracker;sa=viewstatus;status=', $entry['status'], '">', $txt['status_' . $entry['status']], '</a>
 					</td>
 					<td class="stats windowbg2">
-						', $txt['bugtracker_' . $entry['type']], '
+						<a href="', $scripturl, '?action=bugtracker;sa=viewtype;type=', $entry['type'], '">', $txt['bugtracker_' . $entry['type']], '</a>
 					</td>
 					<td class="stats windowbg">
 						', !empty($entry['project']) ? '<a href="' . $scripturl . '?action=bugtracker;sa=viewproject;project=' . $entry['project']['id'] . '">' . $entry['project']['name'] . '</a>' : $txt['na'], '
