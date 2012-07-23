@@ -18,13 +18,7 @@ add_integration_function('integrate_load_permissions', 'fxt_permissions', true);
 if (!defined('SMF'))
 {
 	echo 'Installer done, redirecting';
-	
-	// Load Settings.php
-	require('Settings.php');
-	global $boardurl;
-	
-	// Redirect the **** out of here
-	redirectexit($boardurl . '/index.php');
+	redirectexit();
 }
 
 ?>
